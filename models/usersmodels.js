@@ -81,7 +81,7 @@ exports.login = (email, password) => {
                         resolve(token)
                     } else {
                         mongoose.disconnect()
-                        reject('invalid password')
+                        reject('invalid passwordd')
                     }
                 }).catch((err) => {
                     mongoose.disconnect()
