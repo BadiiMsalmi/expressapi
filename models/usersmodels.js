@@ -7,12 +7,16 @@ require('dotenv').config()
 const schemaValidation = Joi.object({
     username: Joi.string().alphanum().min(3).max(30).required(),
     email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'fr'] } }).required(),
+    age:Joi.number().required(),
+    phone:Joi.number().min(8).max(8).required(),
     password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$'))
 })
 
 let schemaUser = mongoose.Schema({
     username: String,
     email: String,
+    age:Number,
+    phone:Number,
     password: String
 })
 
@@ -23,7 +27,7 @@ let url = process.env.URL
 var User = mongoose.model('user', schemaUser)
 
 
-exports.register = (username, email, password) => {
+exports.register = (username, email,age, password,phone) => {
     return new Promise((resolve, reject) => {
         mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
             return User.findOne({ email: email })
@@ -36,6 +40,8 @@ exports.register = (username, email, password) => {
                     let validation = await schemaValidation.validateAsync({
                         username: username,
                         email: email,
+                        age:age,
+                        phone:phone,
                         password: password
                     })
                     if (validation.error) {
@@ -45,6 +51,8 @@ exports.register = (username, email, password) => {
                     let user = new User({
                         username: username,
                         email: email,
+                        age:age,
+                        phone:phone,
                         password: hashedPass
                     })
                     user.save().then((doc) => {
@@ -72,7 +80,7 @@ exports.login = (email, password) => {
         }).then((user) => {
             if (!user) {
                 mongoose.disconnect()
-                reject('User not found')
+                reject('Invalid informations.')
             } else {
                 bcrypt.compare(password, user.password).then((same) => {
                     if (same) {
@@ -81,13 +89,58 @@ exports.login = (email, password) => {
                         resolve(token)
                     } else {
                         mongoose.disconnect()
-                        reject('invalid passwordd')
+                        reject('Invalid informations.')
                     }
                 }).catch((err) => {
                     mongoose.disconnect()
                     reject(err)
                 })
             }
+        })
+    })
+}
+
+
+exports.getAllUsers = () => {
+    return new Promise((resolve, reject) => {
+        mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+            return User.find()
+        }).then((doc) => {
+            mongoose.disconnect()
+            resolve(doc)
+        }).catch((err) => {
+            mongoose.disconnect()
+            reject(err)
+        })
+    })
+}
+
+
+exports.getOneUser = (id) => {
+    return new Promise((resolve, reject) => {
+        mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+            return User.findById(id)
+        }).then((doc) => {
+            mongoose.disconnect()
+            resolve(doc)
+        }).catch((err) => {
+            mongoose.disconnect()
+            reject(err)
+        })
+    })
+}
+
+
+exports.deleteOneUser = (id) => {
+    return new Promise((resolve, reject) => {
+        mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+            return User.deleteOne({ _id: id })
+        }).then((doc) => {
+            mongoose.disconnect()
+            resolve(doc)
+        }).catch((err) => {
+            mongoose.disconnect()
+            reject(err)
         })
     })
 }
